@@ -8,13 +8,14 @@ import (
 )
 
 // ValidateDate function
+// Ensures that the requested date is not in the future
 func ValidateDate(
 	v *validator.Validate, topStruct reflect.Value, currentStructOrField reflect.Value,
 	field reflect.Value, fieldType reflect.Type, fieldKind reflect.Kind, param string,
 ) bool {
 	if date, ok := field.Interface().(time.Time); ok {
 		today := time.Now()
-		if today.Year() < date.Year() || today.YearDay() < date.YearDay() {
+		if today.Unix() < date.Unix() {
 			return false
 		}
 	}

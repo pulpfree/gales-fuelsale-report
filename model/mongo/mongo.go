@@ -70,6 +70,9 @@ func (db *DB) GetFuelSales(sDte, eDte string) (fs *model.FuelSales, err error) {
 	for _, s := range fs.Sales {
 		s.StationName = nms[s.StationID]
 	}
+	if len(fs.Sales) == 0 {
+		err = errors.New("no data for specified date range")
+	}
 
 	return fs, err
 }
