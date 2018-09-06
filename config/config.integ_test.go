@@ -28,12 +28,12 @@ func (suite *IntegSuite) SetupTest() {
 // this test assumes that the S3Bucket is set
 func (suite *IntegSuite) TestSetSSMParams() {
 
-	s3BucketBefore := defs.S3Bucket
+	DBNameBefore := defs.DBName
 	err := suite.c.setSSMParams()
 	suite.NoError(err)
 
-	s3BucketAfter := defs.S3Bucket
-	suite.True(strings.Compare(s3BucketBefore, s3BucketAfter) != 0)
+	DBNameAfter := defs.DBName
+	suite.True(strings.Compare(DBNameBefore, DBNameAfter) != 0)
 }
 
 // TestLoad function

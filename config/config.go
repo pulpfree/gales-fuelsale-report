@@ -21,6 +21,7 @@ type Config struct {
 	DefaultsFilePath string
 }
 
+// todo: remove S3Bucket
 // defaults struct
 type defaults struct {
 	AWSRegion  string `yaml:"AWSRegion"`
@@ -28,7 +29,6 @@ type defaults struct {
 	DBName     string `yaml:"DBName"`
 	DBPassword string `yaml:"DBPassword"`
 	DBUser     string `yaml:"DBUser"`
-	S3Bucket   string `yaml:"S3Bucket"`
 	SsmPath    string `yaml:"SsmPath"`
 	Stage      string `yaml:"Stage"`
 }
@@ -36,7 +36,6 @@ type defaults struct {
 type config struct {
 	AWSRegion    string
 	DBConnectURL string
-	S3Bucket     string
 	Stage        StageEnvironment
 }
 
@@ -236,7 +235,6 @@ func (c *Config) setDBConnectURL() *Config {
 func (c *Config) setFinal() (err error) {
 
 	c.AWSRegion = defs.AWSRegion
-	c.S3Bucket = defs.S3Bucket
 	err = c.validateStage()
 
 	return err

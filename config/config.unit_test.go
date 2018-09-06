@@ -65,7 +65,6 @@ func (suite *UnitSuite) TestSetFinal() {
 
 	suite.NoError(err)
 	suite.Equal(suite.cfg.AWSRegion, defs.AWSRegion, "Expected Config.AWSRegion (%s) to equal defs.AWSRegion (%s)", suite.cfg.AWSRegion, defs.AWSRegion)
-	suite.Equal(suite.cfg.S3Bucket, defs.S3Bucket, "Expected Config.S3Bucket (%s) to equal defs.S3Bucket (%s)", suite.cfg.S3Bucket, defs.S3Bucket)
 	suite.IsType(se, suite.cfg.Stage)
 }
 

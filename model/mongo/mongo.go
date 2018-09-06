@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/pulpfree/gales-fuelsale-report/model"
@@ -16,10 +17,9 @@ type DB struct {
 
 // DB Constants
 const (
-	DBDips            = "gales-dips"
-	DBSales           = "gales-sales"
-	colGdipsStations  = "store"
-	colGdipsFuelSales = "fuelsale"
+	DBSales      = "gales-sales"
+	colStations  = "station-nodes"
+	colFuelSales = "fuel-sales-export"
 )
 
 // Time form constant
@@ -68,8 +68,10 @@ func (db *DB) GetFuelSales(sDte, eDte string) (fs *model.FuelSales, err error) {
 	}
 
 	for _, s := range fs.Sales {
-		s.StationName = nms[s.StationID]
+		s.StationName = nms[s.StationID.Hex()]
+		s.Date = fmtDateToTime(s.RecordDate)
 	}
+
 	if len(fs.Sales) == 0 {
 		err = errors.New("no data for specified date range")
 	}
@@ -82,52 +84,9 @@ func (db *DB) GetFuelSalesCount() (count int, err error) {
 	s := db.getFreshSession()
 	defer s.Close()
 
-	count, err = s.DB(DBDips).C(colGdipsFuelSales).Find(nil).Count()
+	count, err = s.DB(DBSales).C(colFuelSales).Find(nil).Count()
 
 	return count, err
-}
-
-func (db *DB) fetchFuelSales2(qp *model.QueryParams) (fs *model.FuelSales, err error) {
-
-	empt := time.Time{}
-	if qp.DateEnd == empt || qp.DateStart == empt {
-		return fs, errors.New("Missing start and end dates in fetchFuelSales")
-	}
-	s := db.getFreshSession()
-	defer s.Close()
-
-	fs = &model.FuelSales{}
-
-	col := s.DB(DBDips).C(colGdipsFuelSales)
-	match := bson.M{
-		"$match": bson.M{"record_ts": bson.M{"$gte": qp.DateStart, "$lt": qp.DateEnd}},
-	}
-	group := bson.M{
-		"$group": bson.M{
-			"_id":  bson.M{"stationID": "$store_id"},
-			"NL":   bson.M{"$sum": "$fuel_sales.NL"},
-			"SNL":  bson.M{"$sum": "$fuel_sales.SNL"},
-			"DSL":  bson.M{"$sum": "$fuel_sales.DSL"},
-			"CDSL": bson.M{"$sum": "$fuel_sales.CDSL"},
-		},
-	}
-	project := bson.M{
-		"$project": bson.M{
-			"stationID": "$_id.stationID",
-			"NL":        1,
-			"SNL":       1,
-			"DSL":       1,
-			"CDSL":      1,
-		},
-	}
-	sort := bson.M{
-		"$sort": bson.M{"_id.stationID": 1},
-	}
-
-	pipe := col.Pipe([]bson.M{match, group, project, sort})
-	pipe.All(&fs.Sales)
-
-	return fs, err
 }
 
 func (db *DB) fetchFuelSales(qp *model.QueryParams) (fs *model.FuelSales, err error) {
@@ -139,11 +98,14 @@ func (db *DB) fetchFuelSales(qp *model.QueryParams) (fs *model.FuelSales, err er
 	s := db.getFreshSession()
 	defer s.Close()
 
-	fs = &model.FuelSales{}
-	col := s.DB(DBDips).C(colGdipsFuelSales)
+	dateStart := fmtDateToInt(qp.DateStart)
+	dateEnd := fmtDateToInt(qp.DateEnd)
 
-	q := bson.M{"record_ts": bson.M{"$gte": qp.DateStart, "$lt": qp.DateEnd}}
-	col.Find(q).Sort("store_id", "record_date").All(&fs.Sales)
+	fs = &model.FuelSales{}
+	col := s.DB(DBSales).C(colFuelSales)
+
+	q := bson.M{"recordDate": bson.M{"$gte": dateStart, "$lt": dateEnd}}
+	col.Find(q).Sort("stationID", "recordDate").All(&fs.Sales)
 
 	return fs, err
 }
@@ -155,7 +117,7 @@ func (db *DB) getStationNames() (m model.StationNameMap, err error) {
 
 	sns := &model.StationNames{}
 
-	col := s.DB(DBDips).C(colGdipsStations)
+	col := s.DB(DBSales).C(colStations)
 	iter := col.Find(nil).Iter()
 	err = iter.All(&sns.Names)
 
@@ -183,4 +145,15 @@ func (db *DB) setQueryParams(sDte, eDte string) (qp *model.QueryParams, err erro
 	qp = &model.QueryParams{DateStart: st, DateEnd: met}
 
 	return qp, err
+}
+
+func fmtDateToInt(dte time.Time) (date int) {
+	dteStr := dte.Format("20060102")
+	date, _ = strconv.Atoi(dteStr)
+	return date
+}
+
+func fmtDateToTime(dte int) (date time.Time) {
+	date, _ = time.Parse("20060102", strconv.Itoa(dte))
+	return date
 }

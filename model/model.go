@@ -22,11 +22,11 @@ type FuelSales struct {
 
 // StationSales struct
 type StationSales struct {
-	Date        time.Time `bson:"record_ts" json:"date"`
-	RecordDate  int       `bson:"record_date" json:"recordDate"`
-	StationID   string    `bson:"store_id" json:"stationID"`
-	StationName string    `json:"stationName"`
-	Fuel        *Fuel     `bson:"fuel_sales" json:"fuelSales"`
+	Date        time.Time     `json:"date"`
+	RecordDate  int           `bson:"recordDate" json:"recordDate"`
+	StationID   bson.ObjectId `bson:"stationID" json:"stationID"`
+	StationName string        `json:"stationName"`
+	Fuel        *Fuel         `bson:"fuelSales" json:"fuelSales"`
 }
 
 // Fuel struct
